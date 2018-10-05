@@ -21,6 +21,7 @@ namespace Library.API.Controllers
         [HttpGet()]
         public IActionResult GetAuthors()
         {
+
             var authorsFromRepo = _libraryRepository.GetAuthors();
 
             var authors = Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
