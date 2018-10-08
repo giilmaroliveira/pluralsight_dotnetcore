@@ -134,7 +134,7 @@ namespace Library.API.Controllers
 
                 var bookToReturn = Mapper.Map<BookDto>(bookToAdd);
 
-                return CreatedAtRoute("GetBookForAuthor", new { authorId = authorId, id = bookToReturn.Id = bookToReturn.Id });
+                return CreatedAtRoute("GetBookForAuthor", new { authorId = bookToReturn.AuthorId, id = bookToReturn.Id }, bookToReturn);
             }
 
             Mapper.Map(book, bookForAuthorFromRepo);
