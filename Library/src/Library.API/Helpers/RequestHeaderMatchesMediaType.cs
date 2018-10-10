@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Library.API.Helpers
 {
+    [AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
     public class RequestHeaderMatchesMediaType : Attribute, IActionConstraint
     {
         private string _requestHeaderToMatch;
         private string[] _mediaTypes;
-
         public RequestHeaderMatchesMediaType(string requestHeaderToMatch,
             string[] mediaTypes)
         {
