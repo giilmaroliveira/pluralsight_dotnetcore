@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Newtonsoft.Json.Serialization;
+using AspNetCoreRateLimit;
 
 namespace Library.API
 {
@@ -83,7 +84,7 @@ namespace Library.API
             services.AddScoped<ILibraryRepository, LibraryRepository>();
 
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-             
+
             services.AddScoped<IUrlHelper, UrlHelper>(implementationFactory =>
             {
                 var actionContext =
@@ -95,22 +96,46 @@ namespace Library.API
 
             services.AddTransient<ITypeHelperService, TypeHelperService>();
 
-            services.AddHttpCacheHeaders((expirationModelOptions) 
+            services.AddHttpCacheHeaders((expirationModelOptions)
                 =>
             {
                 expirationModelOptions.MaxAge = 600;
-            }, 
+            },
             (validationModelOptions)
             =>
             {
                 validationModelOptions.MustRevalidate = true;
             });
 
-            services.AddResponseCaching();
+            // services.AddResponseCaching();
+
+            services.AddMemoryCache();
+
+            services.Configure<IpRateLimitOptions>((options) =>
+            {
+                options.GeneralRules = new System.Collections.Generic.List<RateLimitRule>()
+                {
+                    new RateLimitRule()
+                    {
+                        Endpoint = "*",
+                        Limit = 10,
+                        Period = "5m"
+                    },
+                    new RateLimitRule()
+                    {
+                        Endpoint = "*",
+                        Limit = 2,
+                        Period = "10s"
+                    }
+                };
+            });
+
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, 
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env,
             ILoggerFactory loggerFactory, LibraryContext libraryContext)
         {
             loggerFactory.AddConsole();
@@ -140,7 +165,7 @@ namespace Library.API
                         }
                         context.Response.StatusCode = 500;
                         await context.Response.WriteAsync("An unexpected fault happened. Try again later.");
-                     });
+                    });
                 });
             }
 
@@ -167,11 +192,13 @@ namespace Library.API
 
             libraryContext.EnsureSeedDataForContext();
 
-            app.UseResponseCaching();
+            // app.UseResponseCaching();
+
+            app.UseIpRateLimiting();
 
             app.UseHttpCacheHeaders();
 
-            app.UseMvc(); 
+            app.UseMvc();
         }
     }
 }
